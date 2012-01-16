@@ -43,8 +43,8 @@ class PassphraseEntropyTest < MiniTest::Unit::TestCase
   end
 
   def test_should_calculate_entropy_of_keyboard_characters
-    passphrase = "Aa0~"
-    entropy = 4 * 6.5699 # log2(95)
+    passphrase = "Aa0~ "
+    entropy = 5 * 6.5699 # log2(95)
     assert_in_delta entropy, PassphraseEntropy.entropy(passphrase), EPSILON
   end
 
