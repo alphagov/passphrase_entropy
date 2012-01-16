@@ -50,7 +50,7 @@ class PasswordEntropyTest < MiniTest::Unit::TestCase
 
   def test_should_calculate_entropy_of_non_ascii_content
     password = "é" # 2 bytes of UTF-8
-    entropy = 2 * 7.9944 # log2(255)
+    entropy = 2 * 7.0 # log2(128)
     assert_in_delta entropy, PasswordEntropy.entropy(password), EPSILON
   end
 

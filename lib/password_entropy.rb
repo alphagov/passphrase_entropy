@@ -3,50 +3,52 @@ require "singleton"
 module PasswordEntropy
 
   class Pool
-    def initialize(symbols)
-      @pattern = Regexp.new(
-        "\\A[" + symbols.map{ |s| Regexp.escape(s) }.join + "]+\\z",
+    def initialize(*symbols)
+      @symbols = []
+      symbols.each do |s|
+        add Array(s)
+      end
+    end
+
+    def match?(string)
+      string.dup.force_encoding(Encoding::ASCII_8BIT).match(pattern)
+    end
+
+    def entropy(string)
+      return 0 if @symbols.empty?
+      string.bytesize * Math.log2(@symbols.length)
+    end
+
+    def +(other)
+      other.dup.tap { |o| o.add(@symbols) }
+    end
+
+    def add(symbols)
+      @symbols = (@symbols + symbols).sort.uniq
+      @pattern = nil
+    end
+
+  private
+    def pattern
+      @pattern ||= Regexp.new(
+        "[" + @symbols.map{ |s| Regexp.escape(s) }.join + "]",
         options=nil, language="n"
       )
-      @size = symbols.length
-    end
-
-    def match?(string)
-      string.dup.force_encoding(Encoding::ASCII_8BIT).match(@pattern)
-    end
-
-    def entropy_per_symbol
-      Math.log2(@size)
     end
   end
 
-  class NullPool
-    include Singleton
-
-    def match?(string)
-      string.empty?
-    end
-
-    def entropy_per_symbol
-      0
-    end
-  end
-
-  POOLS = [NullPool.instance] + [
-    digits = ("0".."9").to_a,
-    lower  = ("a".."z").to_a,
-    upper  = ("A".."Z").to_a,
-    mixed  = lower + upper,
-    lower + digits,
-    upper + digits,
-    mixed + digits,
-    keyboard = (" ".."~").to_a,
-    any = (1..255).map { |c| [c].pack("C") },
-  ].map { |a| Pool.new(a) }
+  POOLS = [
+    ["0".."9"],
+    ["a".."z"],
+    ["A".."Z"],
+    [" ".."/", ":".."@", "[".."`", "{".."~"],
+    ["\x00".."\x1F"],
+    ["\x80".."\xFF"],
+  ].map { |a| Pool.new(*a) }
 
   def entropy(string)
-    pool = POOLS.detect { |p| p.match?(string) }
-    string.bytesize * pool.entropy_per_symbol
+    pool = POOLS.select { |p| p.match?(string) }.inject(Pool.new([]), &:+)
+    pool.entropy(string)
   end
 
   extend self
