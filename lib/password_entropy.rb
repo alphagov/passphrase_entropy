@@ -1,8 +1,6 @@
-require "singleton"
 require "set"
 
 module PasswordEntropy
-
   class Pool
     attr_reader :symbols
 
