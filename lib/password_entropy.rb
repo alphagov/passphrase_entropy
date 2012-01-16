@@ -1,39 +1,33 @@
 require "singleton"
+require "set"
 
 module PasswordEntropy
 
   class Pool
-    def initialize(*symbols)
-      @symbols = []
-      symbols.each do |s|
-        add Array(s)
+    attr_reader :symbols
+
+    def initialize(*ranges)
+      @symbols = Set.new
+      ranges.each do |r|
+        add Array(r).join.bytes.to_a
       end
     end
 
     def match?(string)
-      string.dup.force_encoding(Encoding::ASCII_8BIT).match(pattern)
+      string.bytes.any? { |b| symbols.include?(b) }
     end
 
     def entropy(string)
-      return 0 if @symbols.empty?
-      string.bytesize * Math.log2(@symbols.length)
+      return 0 if symbols.empty?
+      string.bytesize * Math.log2(symbols.length)
     end
 
     def +(other)
-      other.dup.tap { |o| o.add(@symbols) }
+      other.dup.tap { |o| o.add(symbols) }
     end
 
     def add(symbols)
-      @symbols = (@symbols + symbols).sort.uniq
-      @pattern = nil
-    end
-
-  private
-    def pattern
-      @pattern ||= Regexp.new(
-        "[" + @symbols.map{ |s| Regexp.escape(s) }.join + "]",
-        options=nil, language="n"
-      )
+      @symbols += symbols
     end
   end
 
@@ -47,8 +41,9 @@ module PasswordEntropy
   ].map { |a| Pool.new(*a) }
 
   def entropy(string)
-    pool = POOLS.select { |p| p.match?(string) }.inject(Pool.new([]), &:+)
-    pool.entropy(string)
+    POOLS.inject(Pool.new) { |a, p|
+      p.match?(string) ? a + p : a
+    }.entropy(string)
   end
 
   extend self
