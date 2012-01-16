@@ -1,6 +1,6 @@
 require "set"
 
-module PasswordEntropy
+module PassphraseEntropy
   class Pool
     attr_reader :symbols
 
