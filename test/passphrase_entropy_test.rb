@@ -5,9 +5,13 @@ require "passphrase_entropy"
 
 class PassphraseEntropyTest < MiniTest::Unit::TestCase
 
+  def setup
+    @passphrase_entropy = PassphraseEntropy.new
+  end
+
   def assert_better(better, worse)
-    eb = PassphraseEntropy.entropy(better)
-    ew = PassphraseEntropy.entropy(worse)
+    eb = @passphrase_entropy.entropy(better)
+    ew = @passphrase_entropy.entropy(worse)
     assert(eb > ew, "Expected #{better} (#{eb}) to be better than #{worse} (#{ew})")
   end
 

@@ -1,12 +1,27 @@
-require "passphrase_entropy/calculator"
+require "zlib"
 
-module PassphraseEntropy
-
-  def self.entropy(s)
-    Calculator.instance.entropy(s)
+class PassphraseEntropy
+  def initialize(dictionary=default_dictionary)
+    @dictionary = dictionary
   end
 
-  def self.prewarm
-    Calculator.instance.entropy("")
+  def entropy(s)
+    zlen(s) - baseline
+  end
+
+private
+  def default_dictionary
+    File.read("/usr/share/dict/words")
+  end
+
+  def zlen(s)
+    z = Zlib::Deflate.new
+    out = z.deflate(@dictionary + s, Zlib::FINISH)
+    z.close
+    out.bytesize
+  end
+
+  def baseline
+    @baseline ||= zlen("")
   end
 end
