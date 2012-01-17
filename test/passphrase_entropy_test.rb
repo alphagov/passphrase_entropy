@@ -4,64 +4,34 @@ require "minitest/autorun"
 require "passphrase_entropy"
 
 class PassphraseEntropyTest < MiniTest::Unit::TestCase
-  EPSILON = 1e-2
 
-  def test_should_calculate_entropy_digits
-    passphrase = "0"
-    entropy = 3.3219 # log2(10)
-    assert_in_delta entropy, PassphraseEntropy.entropy(passphrase), EPSILON
+  def assert_better(better, worse)
+    eb = PassphraseEntropy.entropy(better)
+    ew = PassphraseEntropy.entropy(worse)
+    assert(eb > ew, "Expected #{better} (#{eb}) to be better than #{worse} (#{ew})")
   end
 
-  def test_should_calculate_entropy_of_lower_case
-    passphrase = "a"
-    entropy = 4.7004 # log2(26)
-    assert_in_delta entropy, PassphraseEntropy.entropy(passphrase), EPSILON
+  def test_adding_punctuation_should_improve_entropy
+    assert_better "rubbish!", "rubbish"
   end
 
-  def test_should_calculate_entropy_of_upper_case
-    passphrase = "A"
-    entropy = 4.7004 # log2(26)
-    assert_in_delta entropy, PassphraseEntropy.entropy(passphrase), EPSILON
+  def test_random_letters_should_be_better_than_words
+    assert_better "sdfjhweu", "password"
   end
 
-  def test_should_calculate_entropy_of_lower_case_with_digits
-    passphrase = "a0"
-    entropy = 2 * 5.1699 # log2(26 + 10)
-    assert_in_delta entropy, PassphraseEntropy.entropy(passphrase), EPSILON
+  def test_capital_letters_and_numbers_should_improve_entropy
+    assert_better "Password1", "password"
   end
 
-  def test_should_calculate_entropy_of_upper_case_with_digits
-    passphrase = "A0"
-    entropy = 2 * 5.1699 # log2(26 + 10)
-    assert_in_delta entropy, PassphraseEntropy.entropy(passphrase), EPSILON
+  def test_complex_passwords_should_be_better_than_simple_ones
+    assert_better "Slightly^better 1", "Password1"
   end
 
-  def test_should_calculate_entropy_of_mixed_case_with_digits
-    passphrase = "Aa0"
-    entropy = 3 * 5.9542 # log2(26 + 26 + 10)
-    assert_in_delta entropy, PassphraseEntropy.entropy(passphrase), EPSILON
+  def test_should_agree_with_xkcd_936
+    assert_better "correct horse battery staple", "Tr0ub4dor&3"
   end
 
-  def test_should_calculate_entropy_of_keyboard_characters
-    passphrase = "Aa0~ "
-    entropy = 5 * 6.5699 # log2(95)
-    assert_in_delta entropy, PassphraseEntropy.entropy(passphrase), EPSILON
-  end
-
-  def test_should_calculate_entropy_of_non_ascii_content
-    passphrase = "é" # 2 bytes of UTF-8
-    entropy = 2 * 7.0 # log2(128)
-    assert_in_delta entropy, PassphraseEntropy.entropy(passphrase), EPSILON
-  end
-
-  def test_should_calculate_entropy_of_empty_string
-    assert_in_delta 0.000, PassphraseEntropy.entropy(""), EPSILON
-  end
-
-  def test_should_not_modify_string
-    passphrase = "é"
-    before = passphrase.dup
-    dont_care = PassphraseEntropy.entropy(passphrase)
-    assert_equal before, passphrase
+  def test_mixed_symbols_should_be_better_than_words
+    assert_better "~T3n Char$", "antidisestablishmentarianism"
   end
 end
