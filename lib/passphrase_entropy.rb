@@ -20,6 +20,10 @@ class PassphraseEntropy
     zlen(s) - baseline
   end
 
+  def inspect(*args)
+    to_s
+  end
+
 private
   def default_dictionary
     File.read("/usr/share/dict/words")
